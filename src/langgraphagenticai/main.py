@@ -1,5 +1,9 @@
 from src.langgraphagenticai.ui.streamlitui.loadui import LoadStreamlitUI
 import streamlit as st
+from src.langgraphagenticai.LLMS.groqllm import GroqLLM
+from src.langgraphagenticai.graph.graph_builder import GraphBuilder
+from src.langgraphagenticai.ui.streamlitui.display_result import DisplayResultStreamlit
+
 
 def load_langgraph_agenticai_app():
     """
@@ -19,4 +23,31 @@ def load_langgraph_agenticai_app():
     
     user_message=st.chat_input("Enter Your message")
 
+    if user_message:
+        try:
+            #configue the llms
+            obj_llm_config=GroqLLM(user_controls_input=user_input)
+            model=obj_llm_config.get_llm_model()
 
+            if not model:
+                st.error("Error: LLM model could not be intialised")
+                return
+            
+            #intialise and setup the graph based on usecase
+            usecase=user_input.get("selected_usecase")
+
+            if not usecase:
+                st.error("Error: No usecase selected")
+                return
+            
+            graph_builder=GraphBuilder(model=model)
+            try:
+                graph=graph_builder.setup_graph(usecase)
+                DisplayResultStreamlit(usecase,graph,user_message).display_result_on_ui()
+            except Exception as e:
+                st.error(f"Graph error failed-{e}")
+                return
+
+        except Exception as e:
+            st.error(f"error: Graph setup failed-{e}")
+            return
